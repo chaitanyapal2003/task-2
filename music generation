@@ -1,0 +1,32 @@
+
+
+from keras.models import load_model
+from music21 import stream, note, chord, instrument
+import random
+
+model = load_model("music_model.h5")
+
+start = np.random.randint(0, len(X) - 1)
+pattern = list(X[start].flatten() * len(pitches))
+int_to_note = {num: note for note, num in note_to_int.items()}
+
+generated = []
+for i in range(500):
+    input_seq = np.reshape(pattern[-sequence_length:], (1, sequence_length, 1)) / len(pitches)
+    prediction = model.predict(input_seq, verbose=0)
+    idx = np.argmax(prediction)
+    result = int_to_note[idx]
+    generated.append(result)
+    pattern.append(idx)
+
+# Convert to MIDI
+output = stream.Stream()
+for item in generated:
+    if '.' in item or item.isdigit():
+        notes_in_chord = [int(n) for n in item.split('.')]
+        chord_notes = [note.Note(n, velocity=64) for n in notes_in_chord]
+        output.append(chord.Chord(chord_notes))
+    else:
+        output.append(note.Note(item, velocity=64))
+
+output.write('midi', fp='output.mid')
